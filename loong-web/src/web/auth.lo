@@ -1,0 +1,25 @@
+import web.context using;
+import web.errors using;
+import web.http using;
+import web.session using;
+
+public struct PermissionCheck {
+  permission: string,
+  allowed: bool
+}
+
+public fn hasPermission(user: SessionUser, permission: string) -> bool {
+  user.role == "admin" || permission == "read"
+}
+
+public fn requireUser(ctx: RouteContext) -> Either<SessionUser, HttpResp> {
+  if ctx.currentUser() as SessionUser user { user } else { unauthorizedResp("Authentication required") }
+}
+
+public fn requirePermission(ctx: RouteContext, permission: string) -> Either<SessionUser, HttpResp> {
+  auth = ctx.requireUser();
+  if auth as HttpResp resp { resp }
+  else if auth as SessionUser user {
+    if user.hasPermission(permission) { user } else { forbiddenResp("Missing permission: " + permission) }
+  } else { forbiddenResp("Missing permission: " + permission) }
+}

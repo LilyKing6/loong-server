@@ -1,0 +1,16 @@
+[package]
+name = "loong.shared"
+version = "0.1.0"
+edition = "2026"
+source_root = "src"
+
+[dependencies]
+std = { builtin = true }
+
+[targets.shared]
+type = "lib"
+root = "src/shared.lo"
+exports = [
+  "shared.content",
+  "shared.routes",
+]

@@ -1,0 +1,34 @@
+import std.core.tuple using;
+import std.format.json using;
+import std.format.json_orm using;
+
+import web.http_response using;
+import web.http_statuscode using;
+
+public fn jsonField(key: string, val: JsonValue) -> Tuple<string, JsonValue> {
+  Tuple(key, val)
+}
+
+public fn jsonObject(fields: List<Tuple<string, JsonValue> >) -> JsonValue {
+  JsonObject(fields)
+}
+
+public fn jsonArray(entries: List<JsonValue>) -> JsonValue {
+  JsonArray(entries)
+}
+
+public fn jsonResp(status: HttpStatusCode, value: JsonValue) -> HttpResp {
+  httpRespJson(status, value.string())
+}
+
+public fn jsonOk(value: JsonValue) -> HttpResp {
+  jsonResp(HttpStatusCode.Ok, value)
+}
+
+public fn parseJson(input: string) -> Either<JsonValue, Error> {
+  jsonParser().run(input)
+}
+
+fn decodeJson<T>(input: string, t: Type<T>) -> Either<T, Error> {
+  jsonParser(t).run(input)
+}

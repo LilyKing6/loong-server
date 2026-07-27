@@ -1,0 +1,118 @@
+import std.core.list using;
+
+public struct User {
+  id: int,
+  name: string
+}
+
+public struct Role {
+  id: int,
+  name: string
+}
+
+public struct Permission {
+  id: int,
+  name: string
+}
+
+public struct UserRole {
+  userId: int,
+  roleId: int
+}
+
+public struct RolePermission {
+  roleId: int,
+  permissionId: int
+}
+
+public struct Category {
+  id: int,
+  slug: string,
+  name: string
+}
+
+public struct Tag {
+  id: int,
+  slug: string,
+  name: string
+}
+
+public struct Post {
+  id: int,
+  slug: string,
+  title: string,
+  body: string,
+  status: string,
+  publishedAt: string,
+  categoryId: int,
+  tagIds: List<int>
+}
+
+public struct PostRevision {
+  id: int,
+  postId: int,
+  body: string
+}
+
+public struct PostTag {
+  postId: int,
+  tagId: int
+}
+
+public struct PostStats {
+  postId: int,
+  views: int,
+  comments: int
+}
+
+public struct Comment {
+  id: int,
+  postId: int,
+  body: string,
+  authorName: string,
+  parentId: int,
+  createdAt: string,
+  status: string
+}
+
+public struct DocPage {
+  id: int,
+  slug: string,
+  title: string,
+  body: string
+}
+
+public struct DocRevision {
+  id: int,
+  pageId: int,
+  body: string
+}
+
+public struct DocVersion {
+  id: int,
+  name: string
+}
+
+public struct DocNavNode {
+  id: int,
+  versionId: int,
+  title: string,
+  path: string
+}
+
+public struct SiteSettings {
+  siteName: string,
+  siteDescription: string
+}
+
+public struct UploadAsset {
+  id: int,
+  path: string,
+  mime: string
+}
+
+public struct AuditLog {
+  id: int,
+  actionName: string,
+  detail: string
+}

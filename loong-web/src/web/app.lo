@@ -1,0 +1,110 @@
+import std.core.list using;
+
+import web.auth using;
+import web.context using;
+import web.errors using;
+import web.form using;
+import web.http using;
+import web.http_method using;
+import web.http_response using;
+import web.http_statuscode using;
+import web.json using;
+import web.session using;
+import web.upload using;
+
+public fn healthRoute(ctx: RouteContext) -> HttpResp {
+  jsonOk(
+    jsonObject(
+      jsonField("status", "ok") ::
+      jsonField("service", "loong.web") ::
+      jsonField("path", ctx.path.pathWithoutQuery())
+    )
+  )
+}
+
+public fn frameworkInfoRoute(ctx: RouteContext) -> HttpResp {
+  jsonOk(
+    jsonObject(
+      jsonField("name", "loong.web") ::
+      jsonField("features", jsonArray(
+        JsonValue("router") ::
+        JsonValue("middleware") ::
+        JsonValue("static-assets") ::
+        JsonValue("json") ::
+        JsonValue("form-fields") ::
+        JsonValue("request-body") ::
+        JsonValue("session-auth") ::
+        JsonValue("uploads")
+      ))
+    )
+  )
+}
+
+public fn echoQueryRoute(ctx: RouteContext) -> HttpResp {
+  fields = ctx.path.queryFields();
+  jsonOk(
+    jsonObject(
+      jsonField("path", ctx.path.pathWithoutQuery()) ::
+      jsonField("query", jsonArray(fields.map([](field: FormField) -> JsonValue {
+        jsonObject(
+          jsonField("key", field.key) ::
+          jsonField("value", field.value)
+        )
+      })))
+    )
+  )
+}
+
+public fn loginRoute(ctx: RouteContext) -> HttpResp {
+  fields = ctx.body.parseFormFields();
+  userName = fields.formValue("user") ?? ctx.path.queryFields().formValue("user") ?? "admin";
+  jsonResp(
+    HttpStatusCode.Ok,
+    jsonObject(
+      jsonField("status", "ok") ::
+      jsonField("user", userName)
+    )
+  ).httpRespAddFields(sessionCookieHeader(userName) :: List<HttpHeaderField>())
+}
+
+public fn meRoute(ctx: RouteContext) -> HttpResp {
+  if ctx.currentUser() as SessionUser user {
+    jsonOk(
+      jsonObject(
+        jsonField("id", JsonValue(user.id)) ::
+        jsonField("name", user.name) ::
+        jsonField("role", user.role)
+      )
+    )
+  } else {
+    unauthorizedResp("Authentication required")
+  }
+}
+
+public fn uploadRoute(ctx: RouteContext) -> HttpResp {
+  auth = ctx.requirePermission("upload");
+  if auth as HttpResp resp { resp }
+  else if auth as SessionUser user {
+    upload = ctx.uploadMeta();
+    jsonResp(
+      HttpStatusCode.Created,
+      jsonObject(
+        jsonField("filename", upload.filename) ::
+        jsonField("contentType", upload.contentType) ::
+        jsonField("size", JsonValue(upload.size)) ::
+        jsonField("uploadedBy", user.name)
+      )
+    )
+  } else {
+    unauthorizedResp("Authentication required")
+  }
+}
+
+public fn webRoutes() -> List<HttpRoute> {
+  HttpRoute(HttpMethod.Get, "/api/health", [](ctx: RouteContext) -> HttpResp { healthRoute(ctx) }) ::
+  HttpRoute(HttpMethod.Get, "/api/framework", [](ctx: RouteContext) -> HttpResp { frameworkInfoRoute(ctx) }) ::
+  HttpRoute(HttpMethod.Get, "/api/echo", [](ctx: RouteContext) -> HttpResp { echoQueryRoute(ctx) }) ::
+  HttpRoute(HttpMethod.Post, "/api/auth/login", [](ctx: RouteContext) -> HttpResp { loginRoute(ctx) }) ::
+  HttpRoute(HttpMethod.Get, "/api/auth/me", [](ctx: RouteContext) -> HttpResp { meRoute(ctx) }) ::
+  HttpRoute(HttpMethod.Post, "/api/uploads", [](ctx: RouteContext) -> HttpResp { uploadRoute(ctx) })
+}

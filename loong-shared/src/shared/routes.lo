@@ -1,0 +1,57 @@
+import std.core.list using;
+
+public struct ApiRoute {
+  method: string,
+  path: string
+}
+
+public struct FrontendRoute {
+  path: string
+}
+
+public fn apiRoutes() -> List<ApiRoute> {
+  ApiRoute("GET", "/api/health") ::
+  ApiRoute("GET", "/api/framework") ::
+  ApiRoute("POST", "/api/auth/login") ::
+  ApiRoute("GET", "/api/auth/me") ::
+  ApiRoute("POST", "/api/uploads") ::
+  ApiRoute("GET", "/api/blog/health") ::
+  ApiRoute("GET", "/api/blog/posts") ::
+  ApiRoute("GET", "/api/blog/post") ::
+  ApiRoute("POST", "/api/blog/posts") ::
+  ApiRoute("PUT", "/api/blog/posts") ::
+  ApiRoute("PATCH", "/api/blog/posts") ::
+  ApiRoute("POST", "/api/blog/posts/publish") ::
+  ApiRoute("POST", "/api/blog/posts/draft") ::
+  ApiRoute("DELETE", "/api/blog/posts") ::
+  ApiRoute("GET", "/api/docs/health") ::
+  ApiRoute("GET", "/api/docs/pages") ::
+  ApiRoute("GET", "/api/posts") ::
+  ApiRoute("GET", "/api/posts/:slug") ::
+  ApiRoute("GET", "/api/categories") ::
+  ApiRoute("GET", "/api/tags") ::
+  ApiRoute("GET", "/api/docs") ::
+  ApiRoute("GET", "/api/admin/posts") ::
+  ApiRoute("GET", "/api/admin/docs") ::
+  ApiRoute("GET", "/api/search")
+}
+
+public fn frontendRoutes() -> List<FrontendRoute> {
+  FrontendRoute("/") ::
+  FrontendRoute("/posts") ::
+  FrontendRoute("/posts/:slug") ::
+  FrontendRoute("/categories/:slug") ::
+  FrontendRoute("/tags/:slug") ::
+  FrontendRoute("/archive") ::
+  FrontendRoute("/search") ::
+  FrontendRoute("/about") ::
+  FrontendRoute("/docs") ::
+  FrontendRoute("/docs/:version") ::
+  FrontendRoute("/docs/:version/:slug") ::
+  FrontendRoute("/docs/search") ::
+  FrontendRoute("/docs/changelog") ::
+  FrontendRoute("/admin") ::
+  FrontendRoute("/admin/posts") ::
+  FrontendRoute("/admin/docs") ::
+  FrontendRoute("/admin/settings")
+}

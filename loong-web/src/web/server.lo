@@ -1,0 +1,75 @@
+import std.cli using;
+import std.core.{lazy, parallel} using;
+import std.io.tcp using;
+
+import web.context using;
+import web.http using;
+import web.app using;
+import web.config using;
+import web.middleware using;
+import web.routing using;
+
+public impure fn serve(s: ServerSettings) -> Option<Error> {
+  serveWithRoutes(s, webRoutes())
+}
+
+public impure fn serveWithRoutes(s: ServerSettings, routes: List<HttpRoute>) -> Option<Error> {
+  cfg = serverConfig(s);
+  rewriteRules = s.rewriteRules
+    .map([](ruleTxt: string) -> Either<RewriteRule, Error> { parseRewriteRule(ruleTxt) })
+    .split()
+    .valueOrError()
+    .failOnError();
+  rootPath = pathAbsolute(cfg.root);
+  content = loadContent(rootPath, rewriteRules, routes, cfg);
+
+  print("Starting server (url: http://localhost:" + cfg.port + ")");
+
+  startTime = timeNow();
+  timeWriter = dateTimeRFC1123Writer();
+  respWriter = httpRespWriter();
+  reqParser = httpReqHeaderParser();
+  handleCon = (
+    impure [startTime, timeWriter, respWriter, reqParser, content] (con: TcpConnection, state: TcpServerState) -> Option<Error> {
+      uptime = timeNow() - startTime;
+      variables = (
+        SiteVariable("SERVER_UPTIME",             uptime.string())               ::
+        SiteVariable("SERVER_DATE",               timeWriter.run(timeNow()))     ::
+        SiteVariable("SERVER_PLATFORM",           platform().string())           ::
+        SiteVariable("SERVER_RUNTIME_VERSION",    runtimeVersion().string())     ::
+        SiteVariable("SERVER_CONNECTION_COUNTER", state.connectionCounter.string()) ::
+        SiteVariable("REQUEST_ID",                state.connectionCounter.string())
+      );
+      ctx = RequestContext(content, variables, con, timeWriter, respWriter, reqParser);
+      handleConnection(ctx)
+    }
+  );
+
+  tcpServer(TcpServerSettings(handleCon, cfg.port)).error()
+}
+
+public impure fn loadContent(root: PathAbsolute, rewriteUrls: List<RewriteRule>, routes: List<HttpRoute>, config: ServerConfig) -> SiteContent {
+  print("Loading resources (root: '" + root.string() + "')");
+
+  files = fileListReq(root, false).failOnError();
+  assets = files.parallelMap(impure [root] (filePath: PathAbsolute) -> HttpAsset {
+    contentType = findHttpContentType(filePath);
+    content = fileRead(filePath).failOnError();
+    HttpAsset("/" + makeRelative(filePath, root).string(), contentType, content)
+  });
+
+  print("Loaded " + assets.length() + " resources");
+  SiteContent(rewriteUrls, assets, routes, config)
+}
+
+public fn cliDefaults(t: Type<ServerSettings>) {
+  CliDefault("port", "8080") ::
+  CliDefault("rewrite-rules", "*/>{SOURCE}index.html")
+}
+
+public fn parseRewriteRule(input: string) -> Either<RewriteRule, Error> {
+  (
+    untilParser(equals<char>['>']) << matchParser('>') & allParser()
+  ).map([](t: Tuple<string, string>) -> RewriteRule { RewriteRule(GlobTextPattern(t.f1), t.f2) })
+    .run(input, ParseFlags.NoWrapperError) ! Error("Invalid rewrite rule '" + input + "'")
+}

@@ -1,0 +1,69 @@
+import std.core.{func, list} using;
+
+import web.http using;
+import web.http_method using;
+import web.http_response using;
+import web.http_statuscode using;
+
+public struct ServerSettings {
+  port: int,
+  rewriteRules: List<string>,
+  root: Option<Path>
+}
+
+public struct ServerConfig {
+  port: int,
+  root: Path,
+  corsOrigin: string
+}
+
+public struct HttpAsset {
+  url: string,
+  type: HttpContentType,
+  content: string
+}
+
+public struct RewriteRule {
+  source: GlobTextPattern,
+  replacement: string
+}
+
+public struct SiteVariable {
+  key: string,
+  value: string
+}
+
+public fn siteVariableValue(vars: List<SiteVariable>, key: string) -> Option<string> {
+  vars
+    .first([key] (v: SiteVariable) -> bool { v.key == key })
+    .map([](v: SiteVariable) -> string { v.value })
+}
+
+public struct RouteContext {
+  path: string,
+  variables: List<SiteVariable>,
+  headers: List<HttpHeaderField>,
+  body: string
+}
+
+public struct HttpRoute {
+  method: HttpMethod,
+  path: string,
+  handler: fn(RouteContext) -> HttpResp
+}
+
+public struct SiteContent {
+  rewrites: List<RewriteRule>,
+  assets: List<HttpAsset>,
+  routes: List<HttpRoute>,
+  config: ServerConfig
+}
+
+public struct RequestContext {
+  content: SiteContent,
+  variables: List<SiteVariable>,
+  connection: TcpConnection,
+  timeWriter: Writer<DateTime>,
+  respWriter: Writer<HttpResp>,
+  reqParser: Parser<HttpReqHeader>
+}

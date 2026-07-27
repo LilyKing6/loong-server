@@ -1,0 +1,11 @@
+import std.{core, format, prim} using;
+
+public enum HttpMethod { Get, Head, Post, Put, Delete, Trace, Options, Connect, Patch }
+
+public fn string(m: HttpMethod) -> string {
+  strToUpper(reflectEnumKeyForVal(m) ?? "")
+}
+
+public fn httpMethodParser() {
+  enumParser(Type<HttpMethod>(), StrComp.IgnoreCase)
+}

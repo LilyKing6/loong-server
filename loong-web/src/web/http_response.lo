@@ -1,0 +1,96 @@
+import std.{core, format, prim} using;
+import std.core.list using;
+
+import web.http_content_type using;
+import web.http_header using;
+import web.http_method using;
+import web.http_statuscode using;
+
+public struct HttpResp {
+  header: HttpRespHeader,
+  content: string
+}
+
+public fn httpRespWriter() {
+  (
+    httpRespHeaderWriter() & newlineWriter() & newlineWriter() & stringWriter()
+  ).to(Type<HttpResp>())
+}
+
+public fn httpRespAddFields(resp: HttpResp, fields: List<HttpHeaderField>) -> HttpResp {
+  HttpResp(
+    HttpRespHeader(
+      resp.header.httpVersion,
+      resp.header.status,
+      fields :: resp.header.fields
+    ),
+    resp.content
+  )
+}
+
+public fn httpRespHeader(
+    s: HttpStatusCode,
+    txt: string,
+    t: HttpContentType,
+    fields: List<HttpHeaderField>
+  ) -> HttpRespHeader {
+  HttpRespHeader(
+    "1.1",
+    s,
+    HttpHeaderField("Content-Type", t.string()) ::
+    HttpHeaderField("Content-Length", txt.length().string()) :: fields
+  )
+}
+
+public fn httpResp(
+    s: HttpStatusCode,
+    txt: string,
+    t: HttpContentType,
+    fields: List<HttpHeaderField> = List<HttpHeaderField>()
+  ) -> HttpResp {
+  HttpResp(
+    httpRespHeader(s, txt, t, fields),
+    txt
+  )
+}
+
+public fn httpRespJson(
+    s: HttpStatusCode,
+    txt: string,
+    fields: List<HttpHeaderField> = List<HttpHeaderField>()
+  ) -> HttpResp {
+  httpResp(s, txt, HttpContentType.TextJson, fields)
+}
+
+public fn httpRespHead(
+    s: HttpStatusCode,
+    txt: string,
+    t: HttpContentType,
+    fields: List<HttpHeaderField> = List<HttpHeaderField>()
+  ) -> HttpResp {
+  HttpResp(
+    httpRespHeader(s, txt, t, fields),
+    ""
+  )
+}
+
+public fn httpRespBadReq() -> HttpResp {
+  httpRespJson(HttpStatusCode.BadRequest, "{\"error\":\"BadRequest\",\"message\":\"Bad request\"}")
+}
+
+public fn httpRespNotFound(resource: string) -> HttpResp {
+  httpRespJson(HttpStatusCode.NotFound, "{\"error\":\"NotFound\",\"message\":\"Not found: " + resource + "\"}")
+}
+
+public fn httpRespMethodNotAllowed(allowed: List<HttpMethod>) -> HttpResp {
+  httpResp(
+    HttpStatusCode.MethodNotAllowed,
+    "Method not allowed",
+    HttpContentType.TextPlain,
+    HttpHeaderField("Allow", allowed.string("", ", ", "")) :: List<HttpHeaderField>()
+  )
+}
+
+public fn httpRespVersionNotSupported() -> HttpResp {
+  httpRespJson(HttpStatusCode.HttpVersionNotSupported, "{\"error\":\"HttpVersionNotSupported\",\"message\":\"HTTP version not supported\"}")
+}

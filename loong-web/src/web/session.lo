@@ -1,0 +1,50 @@
+import web.context using;
+import web.form using;
+import web.http using;
+
+public struct SessionUser {
+  id: string,
+  name: string,
+  role: string
+}
+
+public fn sessionCookieName() -> string {
+  "loong_session"
+}
+
+public fn sessionTokenFor(userName: string) -> string {
+  "demo-" + userName
+}
+
+public fn cookieFields(headers: List<HttpHeaderField>) -> List<FormField> {
+  headers.httpHeaderValue("Cookie")
+    .map([](cookie: string) -> List<FormField> {
+      cookie
+        .split(equals<char>[';'])
+        .map([](part: string) -> FormField { parseFormPair(part.trim()) })
+    })
+    ?? List<FormField>()
+}
+
+public fn sessionToken(headers: List<HttpHeaderField>) -> Option<string> {
+  headers.cookieFields().formValue(sessionCookieName())
+}
+
+public fn sessionUserFromToken(token: string) -> Option<SessionUser> {
+  if token.startsWith("demo-") { Option(SessionUser("1", token[5, token.length()], "admin")) } else { Option<SessionUser>() }
+}
+
+public fn currentSessionUser(headers: List<HttpHeaderField>) -> Option<SessionUser> {
+  headers.sessionToken().map(sessionUserFromToken) ?? Option<SessionUser>()
+}
+
+public fn currentUser(ctx: RouteContext) -> Option<SessionUser> {
+  ctx.headers.currentSessionUser()
+}
+
+public fn sessionCookieHeader(userName: string) -> HttpHeaderField {
+  HttpHeaderField(
+    "Set-Cookie",
+    sessionCookieName() + "=" + sessionTokenFor(userName) + "; Path=/; HttpOnly; SameSite=Lax"
+  )
+}

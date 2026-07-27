@@ -1,0 +1,35 @@
+[package]
+name = "loong.web"
+version = "0.1.0"
+edition = "2026"
+source_root = "src"
+
+[dependencies]
+std = { builtin = true }
+
+[targets.web]
+type = "lib"
+root = "src/web.lo"
+exports = [
+  "web.app",
+  "web.auth",
+  "web.config",
+  "web.context",
+  "web.cors",
+  "web.errors",
+  "web.form",
+  "web.http",
+  "web.http_content_type",
+  "web.http_header",
+  "web.http_method",
+  "web.http_response",
+  "web.http_statuscode",
+  "web.json",
+  "web.logging",
+  "web.middleware",
+  "web.routing",
+  "web.server",
+  "web.session",
+  "web.static",
+  "web.upload",
+]

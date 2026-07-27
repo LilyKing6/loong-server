@@ -1,0 +1,14 @@
+import std.core.option using;
+import std.sys using;
+
+import web.context using;
+
+public impure fn serverConfig(s: ServerSettings) -> ServerConfig {
+  envPort = getEnvVar("LOONG_WEB_PORT");
+  envCors = getEnvVar("LOONG_WEB_CORS_ORIGIN");
+  ServerConfig(
+    envPort.map([s] (p: string) -> int { txtIntParser()(p) ?? s.port }) ?? s.port,
+    s.root ?? (pathProgram().parent() / "site"),
+    envCors ?? "*"
+  )
+}

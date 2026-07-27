@@ -1,0 +1,42 @@
+import std.core.{list, text, tuple} using;
+
+public struct FormField {
+  key: string,
+  value: string
+}
+
+public fn urlDecode(input: string) -> string {
+  input.replace("+", " ")
+}
+
+public fn parseFormPair(pair: string) -> FormField {
+  idx = pair.indexOf("=");
+  if idx < 0 { FormField(pair.urlDecode(), "") } else { FormField(pair[0, idx].urlDecode(), pair[++idx, pair.length()].urlDecode()) }
+}
+
+public fn parseFormFields(input: string) -> List<FormField> {
+  input
+    .split(equals<char>['&'])
+    .filter([](part: string) -> bool { part.length() > 0 })
+    .map(parseFormPair)
+}
+
+public fn queryString(resource: string) -> string {
+  idx = resource.indexOf("?");
+  if idx < 0 { "" } else { resource[++idx, resource.length()] }
+}
+
+public fn pathWithoutQuery(resource: string) -> string {
+  idx = resource.indexOf("?");
+  if idx < 0 { resource } else { resource[0, idx] }
+}
+
+public fn queryFields(resource: string) -> List<FormField> {
+  resource.queryString().parseFormFields()
+}
+
+public fn formValue(fields: List<FormField>, key: string) -> Option<string> {
+  fields
+    .first([key] (field: FormField) -> bool { field.key == key })
+    .map([](field: FormField) -> string { field.value })
+}

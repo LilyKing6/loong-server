@@ -1,0 +1,54 @@
+import std.format.json using;
+
+import web.http using;
+import web.http_header using;
+import web.http_method using;
+import web.http_response using;
+import web.http_statuscode using;
+import web.json using;
+
+public fn statusCodeText(status: HttpStatusCode) -> string {
+  string(status)
+}
+
+public fn errorResp(status: HttpStatusCode, message: string) -> HttpResp {
+  jsonResp(
+    status,
+    jsonObject(
+      jsonField("error", status.statusCodeText()) ::
+      jsonField("message", message)
+    )
+  )
+}
+
+public fn badRequestResp(message: string) -> HttpResp {
+  errorResp(HttpStatusCode.BadRequest, message)
+}
+
+public fn unauthorizedResp(message: string) -> HttpResp {
+  errorResp(HttpStatusCode.Unauthorized, message)
+}
+
+public fn forbiddenResp(message: string) -> HttpResp {
+  errorResp(HttpStatusCode.Forbidden, message)
+}
+
+public fn notFoundResp(resource: string) -> HttpResp {
+  errorResp(HttpStatusCode.NotFound, "Not found: " + resource)
+}
+
+public fn methodNotAllowedResp(allowed: List<HttpMethod>) -> HttpResp {
+  httpRespJson(
+    HttpStatusCode.MethodNotAllowed,
+    jsonObject(
+      jsonField("error", "MethodNotAllowed") ::
+      jsonField("message", "Method not allowed") ::
+      jsonField("allowed", jsonArray(allowed.map([](m: HttpMethod) -> JsonValue { JsonValue(m.string()) })))
+    ).string(),
+    HttpHeaderField("Allow", allowed.string("", ", ", "")) :: List<HttpHeaderField>()
+  )
+}
+
+public fn versionNotSupportedResp() -> HttpResp {
+  errorResp(HttpStatusCode.HttpVersionNotSupported, "HTTP version not supported")
+}

@@ -1,0 +1,16 @@
+import web.context using;
+import web.http using;
+
+public fn requestId(ctx: RequestContext) -> string {
+  ctx.variables.siteVariableValue("REQUEST_ID") ?? "unknown"
+}
+
+public impure fn logRequest(ctx: RequestContext, req: HttpReqHeader) -> Option<Error> {
+  print("-- Request received [" + ctx.requestId() + "]: " + req.method + " " + req.resource);
+  None()
+}
+
+public impure fn logResponse(ctx: RequestContext, resp: HttpResp) -> Option<Error> {
+  print("-- Writing response [" + ctx.requestId() + "]: http-" + resp.header.httpVersion + ":" + resp.header.status);
+  None()
+}

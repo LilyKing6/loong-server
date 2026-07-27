@@ -1,0 +1,60 @@
+import std.core.list using;
+import web.context using;
+import web.http using;
+import web.http_method using;
+import web.http_response using;
+import web.http_statuscode using;
+
+public fn rewriteUrl(c: SiteContent, url: string) -> string {
+  (
+    maybeRule = c.rewrites.first([url] (r: RewriteRule) textMatch(r.source, url));
+    if (maybeRule as RewriteRule rule) {
+      rule.replacement.replace("{SOURCE}", url)
+    } else {
+      url
+    }
+  )
+}
+
+public fn getAsset(c: SiteContent, url: string) -> Option<HttpAsset> {
+  (
+    rewrittenUrl = c.rewriteUrl(url);
+    c.assets.first([rewrittenUrl] (r: HttpAsset) r.url == rewrittenUrl)
+  )
+}
+
+public fn replaceVariables(ctx: RequestContext, r: HttpAsset) -> string {
+  if (!r.type.isText()) {
+    r.content
+  } else {
+    ctx.variables.fold(
+      [] (txt: string, v: SiteVariable) txt.replace("{{" + v.key + "}}", v.value),
+      r.content
+    )
+  }
+}
+
+public fn buildAssetResponse(ctx: RequestContext, r: HttpAsset, m: HttpMethod) -> HttpResp {
+  (
+    txt = ctx.replaceVariables(r);
+    if (m == HttpMethod.Get) {
+      httpResp(HttpStatusCode.Ok, txt, r.type)
+    } else if (m == HttpMethod.Head) {
+      httpRespHead(HttpStatusCode.Ok, txt, r.type)
+    } else {
+      supportedMethods = HttpMethod.Get :: HttpMethod.Head;
+      httpRespMethodNotAllowed(supportedMethods)
+    }
+  )
+}
+
+public fn getStaticResponse(ctx: RequestContext, m: HttpMethod, url: string) -> Option<HttpResp> {
+  (
+    resLookup = ctx.content.getAsset(url);
+    if (resLookup as HttpAsset r) {
+      ctx.buildAssetResponse(r, m)
+    } else {
+      None()
+    }
+  )
+}

@@ -1,0 +1,81 @@
+import std.{core, diag, format, prim} using;
+import std.core.list using;
+import web.http_content_type using;
+import web.http_method using;
+import web.http_statuscode using;
+
+public struct HttpHeaderField {
+  key: string,
+  value: string
+}
+
+public struct HttpReqHeader {
+  method: HttpMethod,
+  resource: string,
+  httpVersion: string,
+  fields: List<HttpHeaderField>
+}
+
+public struct HttpReq {
+  header: HttpReqHeader,
+  body: string
+}
+
+public fn httpHeaderValue(headers: List<HttpHeaderField>, key: string) -> Option<string> {
+  headers
+    .first([key] (field: HttpHeaderField) -> bool { field.key.equals(key, StrComp.IgnoreCase) })
+    .map([](field: HttpHeaderField) -> string { field.value })
+}
+
+public fn contentLength(header: HttpReqHeader) -> Option<int> {
+  header.fields.httpHeaderValue("Content-Length")
+    .map([](value: string) -> int { txtIntParser().run(value.trim()) ?? 0 })
+}
+
+public struct HttpRespHeader {
+  httpVersion: string,
+  status: HttpStatusCode,
+  fields: List<HttpHeaderField>
+}
+
+public fn httpVersionParser() {
+  matchParser("HTTP/") >> untilParser(isWhitespace)
+}
+
+public fn httpHeaderFieldParser() {
+  (
+    untilParser(matchParser(':')) << matchParser(':') & whitespaceParser() >> lineParser()
+  ).to(Type<HttpHeaderField>())
+}
+
+public fn httpReqHeaderParser() {
+  (
+    httpMethodParser()        << whitespaceParser() &
+    untilParser(isWhitespace) << whitespaceParser() &
+    httpVersionParser()       << whitespaceParser() &
+    manyParser(httpHeaderFieldParser(), newlineParser())
+  ).to(Type<HttpReqHeader>()) ! Error("Invalid http request header")
+}
+
+public fn httpVersionWriter() {
+  litWriter("HTTP/") & stringWriter()
+}
+
+public fn httpRespStatusLineWriter() {
+  (
+    httpVersionWriter() & litWriter(' ') & httpStatusCodeWriter()
+  ).map([](h: HttpRespHeader) -> Tuple<string, HttpStatusCode> { Tuple(h.httpVersion, h.status) })
+}
+
+public fn httpHeaderFieldWriter() {
+  (
+    stringWriter() & litWriter(": ") & stringWriter()
+  ).to(Type<HttpHeaderField>())
+}
+
+public fn httpRespHeaderWriter() {
+  (
+    httpRespStatusLineWriter() & newlineWriter() &
+    listWriter(httpHeaderFieldWriter(), newlineWriter())
+  ).map([](h: HttpRespHeader) -> Tuple<HttpRespHeader, List<HttpHeaderField>> { Tuple(h, h.fields) })
+}

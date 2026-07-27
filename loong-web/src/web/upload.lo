@@ -1,0 +1,22 @@
+import web.context using;
+import web.form using;
+import web.http using;
+
+public struct UploadMeta {
+  filename: string,
+  contentType: string,
+  size: int
+}
+
+public fn uploadFilename(ctx: RouteContext) -> string {
+  fields = ctx.path.queryFields();
+  fields.formValue("filename") ?? "upload.bin"
+}
+
+public fn uploadContentType(ctx: RouteContext) -> string {
+  ctx.headers.httpHeaderValue("Content-Type") ?? "application/octet-stream"
+}
+
+public fn uploadMeta(ctx: RouteContext) -> UploadMeta {
+  UploadMeta(ctx.uploadFilename(), ctx.uploadContentType(), ctx.body.length())
+}
