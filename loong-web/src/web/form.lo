@@ -5,8 +5,32 @@ public struct FormField {
   value: string
 }
 
+fn hexCharToInt(c: char) -> int {
+  (if (c >= '0' && c <= '9') { (c - '0') } else { 0 }) +
+  (if (c >= 'a' && c <= 'f') { (c - ('a' - 10)) } else { 0 }) +
+  (if (c >= 'A' && c <= 'F') { (c - ('A' - 10)) } else { 0 })
+}
+
+fn urlDecodeHelper(str: string, idx: int, res: string) -> string {
+  (
+    if (idx >= str.length()) {
+      res
+    } else if (str[idx] == '+') {
+      urlDecodeHelper(str, idx + 1, res.appendChar(' '))
+    } else if (str[idx] == '%' && idx + 2 < str.length()) {
+      (
+        hi = hexCharToInt(str[idx + 1]);
+        lo = hexCharToInt(str[idx + 2]);
+        urlDecodeHelper(str, idx + 3, res.appendChar(char(hi * 16 + lo)))
+      )
+    } else {
+      urlDecodeHelper(str, idx + 1, res.appendChar(str[idx]))
+    }
+  )
+}
+
 public fn urlDecode(input: string) -> string {
-  input.replace("+", " ")
+  urlDecodeHelper(input, 0, "")
 }
 
 public fn parseFormPair(pair: string) -> FormField {
