@@ -81,17 +81,20 @@ public fn meRoute(ctx: RouteContext) -> HttpResp {
   }
 }
 
-public fn uploadRoute(ctx: RouteContext) -> HttpResp {
+public impure fn uploadRoute(ctx: RouteContext) -> HttpResp {
   auth = ctx.requirePermission("upload");
   if auth as HttpResp resp { resp }
   else if auth as SessionUser user {
-    upload = ctx.uploadMeta();
+    filename = ctx.uploadFilename();
+    contentType = ctx.uploadContentType();
+    upload = saveUpload(filename, contentType, ctx.body);
     jsonResp(
       HttpStatusCode.Created,
       jsonObject(
         jsonField("filename", upload.filename) ::
         jsonField("contentType", upload.contentType) ::
         jsonField("size", JsonValue(upload.size)) ::
+        jsonField("url", upload.url) ::
         jsonField("uploadedBy", user.name)
       )
     )
@@ -106,5 +109,5 @@ public fn webRoutes() -> List<HttpRoute> {
   HttpRoute(HttpMethod.Get, "/api/echo", [](ctx: RouteContext) -> HttpResp { echoQueryRoute(ctx) }) ::
   HttpRoute(HttpMethod.Post, "/api/auth/login", [](ctx: RouteContext) -> HttpResp { loginRoute(ctx) }) ::
   HttpRoute(HttpMethod.Get, "/api/auth/me", [](ctx: RouteContext) -> HttpResp { meRoute(ctx) }) ::
-  HttpRoute(HttpMethod.Post, "/api/uploads", [](ctx: RouteContext) -> HttpResp { uploadRoute(ctx) })
+  HttpRoute(HttpMethod.Post, "/api/uploads", impure [](ctx: RouteContext) -> HttpResp { uploadRoute(ctx) })
 }

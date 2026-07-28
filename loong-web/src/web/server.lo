@@ -59,7 +59,24 @@ public impure fn loadContent(root: PathAbsolute, rewriteUrls: List<RewriteRule>,
   });
 
   print("Loaded " + assets.length() + " resources");
-  SiteContent(rewriteUrls, assets, routes, config)
+
+  uploadsDir = pathAbsolute(pathRel() / "data" / "uploads");
+  uploadAssets = (if (fileDirExists(uploadsDir)) {
+    uploadFiles = fileListReq(uploadsDir, false).failOnError();
+    uploadFiles.parallelMap(impure [uploadsDir] (filePath: PathAbsolute) -> HttpAsset {
+      ct = findHttpContentType(filePath);
+      fc = fileRead(filePath).failOnError();
+      HttpAsset("/uploads/" + makeRelative(filePath, uploadsDir).string(), ct, fc)
+    })
+  } else {
+    List<HttpAsset>()
+  });
+
+  (
+    allAssets = assets :: uploadAssets;
+    print("Loaded " + allAssets.length() + " resources (" + uploadAssets.length() + " uploads)");
+    SiteContent(rewriteUrls, allAssets, routes, config)
+  )
 }
 
 public fn cliDefaults(t: Type<ServerSettings>) {

@@ -1,11 +1,18 @@
 import web.context using;
 import web.form using;
 import web.http using;
+import web.http_statuscode using;
+import web.http_response using;
+import web.json using;
+import std.io.file using;
+import std.io.path using;
+import std.sys.rt using;
 
 public struct UploadMeta {
   filename: string,
   contentType: string,
-  size: int
+  size: int,
+  url: string
 }
 
 public fn uploadFilename(ctx: RouteContext) -> string {
@@ -18,5 +25,19 @@ public fn uploadContentType(ctx: RouteContext) -> string {
 }
 
 public fn uploadMeta(ctx: RouteContext) -> UploadMeta {
-  UploadMeta(ctx.uploadFilename(), ctx.uploadContentType(), ctx.body.length())
+  UploadMeta(ctx.uploadFilename(), ctx.uploadContentType(), ctx.body.length(), "")
+}
+
+impure fn uploadsDir() -> Path {
+  pathAbsolute(pathRel() / "data" / "uploads")
+}
+
+impure fn saveUpload(filename: string, contentType: string, body: string) -> UploadMeta {
+  dir = uploadsDir();
+  if (!fileDirExists(dir)) {
+    fileCreateDir(dir)
+  };
+  filePath = dir / filename;
+  fileWrite(filePath, body);
+  UploadMeta(filename, contentType, body.length(), "/uploads/" + filename)
 }
