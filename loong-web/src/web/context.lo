@@ -49,7 +49,7 @@ public struct RouteContext {
 public struct HttpRoute {
   method: HttpMethod,
   path: string,
-  handler: fn(RouteContext) -> HttpResp
+  handler: action<RouteContext, HttpResp>
 }
 
 public struct SiteContent {

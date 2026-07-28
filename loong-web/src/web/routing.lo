@@ -18,7 +18,7 @@ public fn routeAllowedMethods(routes: List<HttpRoute>, url: string) -> List<Http
     .map([] (r: HttpRoute) r.method)
 }
 
-public fn getRouteResponse(ctx: RequestContext, req: HttpReq) -> Option<HttpResp> {
+public impure fn getRouteResponse(ctx: RequestContext, req: HttpReq) -> Option<HttpResp> {
   (
     m = req.header.method;
     url = req.header.resource;
@@ -35,7 +35,7 @@ public fn getRouteResponse(ctx: RequestContext, req: HttpReq) -> Option<HttpResp
   )
 }
 
-public fn getResponse(ctx: RequestContext, req: HttpReq) -> HttpResp {
+public impure fn getResponse(ctx: RequestContext, req: HttpReq) -> HttpResp {
   (
     m = req.header.method;
     url = req.header.resource;
